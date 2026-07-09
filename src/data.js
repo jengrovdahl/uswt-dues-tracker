@@ -24,11 +24,11 @@ export async function getMembers(chapterId = null) {
 export async function addMember(m) {
   const id = uid();
   await run(
-    `INSERT INTO members (id, chapter_id, last_name, first_name, address, city, state, zip, home_phone, email, birthdate, join_date, ssn, status, trans_code, uspp, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO members (id, chapter_id, last_name, first_name, address, city, state, zip, home_phone, email, birthdate, join_date, ssn, status, trans_code, uspp, tri_due, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [id, m.chapterId, m.lastName, m.firstName, m.address || '', m.city || '', m.state || '', m.zip || '',
      m.homePhone || '', m.email || '', m.birthdate || '', m.joinDate || new Date().toISOString().slice(0, 10),
-     m.ssn || '0', m.status || 'active', m.transCode || 'new', m.uspp ? 1 : 0, m.notes || '']
+     m.ssn || '0', m.status || 'active', m.transCode || 'new', m.uspp ? 1 : 0, m.triDue || null, m.notes || '']
   );
   await logEvent(id, m.chapterId, m.transCode || 'new', 'Added to roster');
   return id;

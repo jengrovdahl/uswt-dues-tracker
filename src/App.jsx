@@ -3,9 +3,9 @@ import './index.css';
 import * as api from './data';
 
 const TRI_DEFAULTS = [
-  { name: '1st Trimester', start_date: '2026-05-01', end_date: '2026-08-31', due_date: '2026-08-15' },
-  { name: '2nd Trimester', start_date: '2026-09-01', end_date: '2026-12-31', due_date: '2026-12-15' },
-  { name: '3rd Trimester', start_date: '2027-01-01', end_date: '2027-04-30', due_date: '2027-04-15' },
+  { name: '1st Trimester', cycle_number: 1, start_date: '2026-05-01', end_date: '2026-08-31', due_date: '2026-08-15' },
+  { name: '2nd Trimester', cycle_number: 2, start_date: '2026-09-01', end_date: '2026-12-31', due_date: '2026-12-15' },
+  { name: '3rd Trimester', cycle_number: 3, start_date: '2027-01-01', end_date: '2027-04-30', due_date: '2027-04-15' },
 ];
 
 function fmtDate(iso) {
@@ -171,6 +171,7 @@ export default function App() {
       zip: r[5] || '', homePhone: r[6] || '', email: r[7] || '', birthdate: r[8] || '', joinDate: r[9] || '',
       transCode: r.length > 10 ? (r[10] || '').toLowerCase() : 'new',
       uspp: /^(1|y|yes|true)$/i.test((r[11] || '').trim()),
+      triDue: r[12] ? parseInt(r[12], 10) : null,
     })).filter(r => r.lastName && r.firstName);
     if (parsed.length === 0) { setBulkStatus('No valid rows found — need last name and first name in the first two columns.'); return; }
     setBulkStatus(`Importing ${parsed.length} members…`);
@@ -203,7 +204,7 @@ export default function App() {
   }
 
   const billingCh = chapters.find(c => c.id === billingChapter);
-  const billingMembers = members.filter(m => m.chapter_id === billingChapter && m.status === 'active');
+  const billingMembers = members.filter(m => m.chapter_id === billingChapter && m.status === 'active' && m.tri_due === cur.cycle_number);
   const billable = billingMembers.filter(m => !m.uspp);
   const rosterMembers = members.filter(m => m.chapter_id === rosterChapter);
 
@@ -308,9 +309,9 @@ export default function App() {
           {bulkMembersOpen && (
             <div className="row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
               <p className="hint" style={{ marginBottom: 8 }}>
-                Paste rows for the chapter selected above — one member per line: last name, first name, address, city, state, zip, phone, email, birthdate (YYYY-MM-DD), join date (YYYY-MM-DD), and two optional columns: status (new / rnew / leave blank for an existing active member) and USPP (1 for yes, otherwise leave blank). Tab or comma separated.
+                Paste rows for the chapter selected above — one member per line: last name, first name, address, city, state, zip, phone, email, birthdate (YYYY-MM-DD), join date (YYYY-MM-DD), status (new / rnew / blank), USPP (1 or blank), and Tri Due (1, 2, or 3 — which trimester this member is actually billed in). Tab or comma separated.
               </p>
-              <textarea className="recap" style={{ minHeight: 140 }} value={bulkMembersText} onChange={e => setBulkMembersText(e.target.value)} placeholder={'Example\tJane\t123 Main St\tBlooming Prairie\tMN\t55917\t507-555-0100\tjane@example.com\t1985-04-12\t2020-01-01\trnew\t0'} />
+              <textarea className="recap" style={{ minHeight: 140 }} value={bulkMembersText} onChange={e => setBulkMembersText(e.target.value)} placeholder={'Example\tJane\t123 Main St\tBlooming Prairie\tMN\t55917\t507-555-0100\tjane@example.com\t1985-04-12\t2020-01-01\trnew\t0\t2'} />
               <div className="row" style={{ marginTop: 8 }}>
                 <button className="primary" onClick={handleBulkMembers}>Import members</button>
                 {bulkStatus && <span style={{ fontSize: 12, color: 'var(--muted)' }}>{bulkStatus}</span>}
@@ -336,7 +337,7 @@ export default function App() {
             <table>
               <thead>
                 <tr>
-                  <th>Name</th><th>Address</th><th>Phone</th><th>Join date</th>
+                  <th>Name</th><th>Address</th><th>Phone</th><th>Join date</th><th>Tri due</th>
                   {showSSN && <th>SSN</th>}
                   <th>Status</th><th>Actions</th>
                 </tr>
@@ -348,6 +349,7 @@ export default function App() {
                     <td>{m.address}, {m.city} {m.state} {m.zip}</td>
                     <td style={{ fontFamily: 'var(--mono)' }}>{m.home_phone || '—'}</td>
                     <td>{fmtDate(m.join_date)}</td>
+                    <td style={{ fontFamily: 'var(--mono)', textAlign: 'center' }}>{m.tri_due || '—'}</td>
                     {showSSN && <td style={{ fontFamily: 'var(--mono)' }}>{m.ssn}</td>}
                     <td>{stampFor(m)}</td>
                     <td>
@@ -391,7 +393,7 @@ export default function App() {
       {tab === 'billing' && (
         <div>
           <h2 className="section">Generate dues billing</h2>
-          <p className="hint">Produces the roster + dues billing sheet in National's format, ready to mail or print. Total due excludes USPP and dropped members.</p>
+          <p className="hint">Produces the roster + dues billing sheet in National's format, ready to mail or print. Only members whose own Tri Due matches the current trimester are billed — most members appear on just one of the three billing runs each year, not all of them.</p>
           <div className="row">
             <label style={{ fontSize: 13, color: 'var(--muted)' }}>Chapter</label>
             <select value={billingChapter} onChange={e => setBillingChapter(e.target.value)}>

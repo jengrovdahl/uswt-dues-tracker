@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS members (
   status TEXT DEFAULT 'active',      -- active | dropped
   trans_code TEXT,                   -- new | rnew | drop | transfer | late
   uspp INTEGER DEFAULT 0,            -- Past National President flag; National dues not paid for these
+  tri_due INTEGER,                   -- 1, 2, or 3 — each member is billed only in her own assigned trimester, not every trimester
   transferred_from_state TEXT,
   notes TEXT,
   created_at TEXT DEFAULT (datetime('now')),
@@ -66,15 +67,16 @@ CREATE TABLE IF NOT EXISTS intake_queue (
 CREATE TABLE IF NOT EXISTS trimesters (
   id TEXT PRIMARY KEY,
   name TEXT,
-  start_date TEXT,          -- first day of the trimester period
-  end_date TEXT,             -- last day of the trimester period (no gap between trimesters)
-  due_date TEXT               -- National's mailing/billing deadline, which falls inside the period, not at its edge
+  cycle_number INTEGER,       -- matches members.tri_due (1, 2, or 3)
+  start_date TEXT,
+  end_date TEXT,
+  due_date TEXT
 );
 
-INSERT OR IGNORE INTO trimesters (id, name, start_date, end_date, due_date) VALUES
-  ('tri1-2026', '1st Trimester', '2026-05-01', '2026-08-31', '2026-08-15'),
-  ('tri2-2026', '2nd Trimester', '2026-09-01', '2026-12-31', '2026-12-15'),
-  ('tri3-2027', '3rd Trimester', '2027-01-01', '2027-04-30', '2027-04-15');
+INSERT OR IGNORE INTO trimesters (id, name, cycle_number, start_date, end_date, due_date) VALUES
+  ('tri1-2026', '1st Trimester', 1, '2026-05-01', '2026-08-31', '2026-08-15'),
+  ('tri2-2026', '2nd Trimester', 2, '2026-09-01', '2026-12-31', '2026-12-15'),
+  ('tri3-2027', '3rd Trimester', 3, '2027-01-01', '2027-04-30', '2027-04-15');
 
 CREATE INDEX IF NOT EXISTS idx_members_chapter ON members(chapter_id);
 CREATE INDEX IF NOT EXISTS idx_events_member ON member_events(member_id);
