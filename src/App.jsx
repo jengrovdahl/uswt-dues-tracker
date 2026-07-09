@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import './index.css';
 import * as api from './data';
+import { parseChapterRosterPdf } from './pdfImport';
 
 const TRI_DEFAULTS = [
   { name: '1st Trimester', cycle_number: 1, start_date: '2026-05-01', end_date: '2026-08-31', due_date: '2026-08-15' },
@@ -58,6 +59,8 @@ export default function App() {
   const [bulkMembersOpen, setBulkMembersOpen] = useState(false);
   const [bulkMembersText, setBulkMembersText] = useState('');
   const [bulkStatus, setBulkStatus] = useState('');
+  const [pdfStatus, setPdfStatus] = useState('');
+  const [pdfPreview, setPdfPreview] = useState(null);
 
   const refresh = useCallback(async () => {
     const [c, m, q, t] = await Promise.all([
@@ -181,6 +184,32 @@ export default function App() {
     await refresh();
   }
 
+  async function handlePdfFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPdfStatus('Reading PDF…');
+    setPdfPreview(null);
+    try {
+      const buf = await file.arrayBuffer();
+      const result = await parseChapterRosterPdf(buf);
+      setPdfPreview(result);
+      setPdfStatus(`Found ${result.chapter.name || '(no chapter name detected)'} — ${result.members.length} members. Review below, then confirm import.`);
+    } catch (err) {
+      console.error(err);
+      setPdfStatus(`Couldn't read that PDF: ${err.message}`);
+    }
+  }
+
+  async function confirmPdfImport() {
+    if (!pdfPreview) return;
+    setPdfStatus('Importing…');
+    const chapterId = await api.addChapter(pdfPreview.chapter);
+    await api.bulkAddMembers(pdfPreview.members, chapterId);
+    setPdfStatus(`Imported ${pdfPreview.chapter.name} with ${pdfPreview.members.length} members.`);
+    setPdfPreview(null);
+    await refresh();
+  }
+
   function buildRecap() {
     const now = new Date();
     const lines = [];
@@ -260,8 +289,34 @@ export default function App() {
             <input type="text" name="president" placeholder="President" />
             <button type="submit" className="primary">Add chapter</button>
           </form>
+          <div className="row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+            <p className="hint" style={{ marginBottom: 8 }}>Drop in a Chapter Roster PDF from National — it reads the chapter details and every member, including each person's real Tri Due, directly off the file.</p>
+            <input type="file" accept="application/pdf" onChange={handlePdfFile} />
+            {pdfStatus && <p className="hint" style={{ marginTop: 8 }}>{pdfStatus}</p>}
+            {pdfPreview && (
+              <div style={{ marginTop: 10 }}>
+                <table>
+                  <thead><tr><th>Name</th><th>City</th><th>Tri due</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {pdfPreview.members.map((m, i) => (
+                      <tr key={i}>
+                        <td>{m.lastName}, {m.firstName}</td>
+                        <td>{m.city}, {m.state}</td>
+                        <td style={{ fontFamily: 'var(--mono)', textAlign: 'center' }}>{m.triDue || '—'}</td>
+                        <td>{m.uspp ? 'USPP' : (m.transCode || '—')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="row" style={{ marginTop: 10 }}>
+                  <button className="primary" onClick={confirmPdfImport}>Confirm import</button>
+                  <button className="ghost" onClick={() => { setPdfPreview(null); setPdfStatus(''); }}>Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
           <div className="row">
-            <button onClick={() => setBulkChaptersOpen(v => !v)}>{bulkChaptersOpen ? 'Cancel bulk import' : 'Bulk import chapters'}</button>
+            <button onClick={() => setBulkChaptersOpen(v => !v)}>{bulkChaptersOpen ? 'Cancel bulk import' : 'Or paste chapter rows manually'}</button>
           </div>
           {bulkChaptersOpen && (
             <div className="row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
