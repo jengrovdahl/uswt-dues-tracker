@@ -66,14 +66,15 @@ CREATE TABLE IF NOT EXISTS intake_queue (
 CREATE TABLE IF NOT EXISTS trimesters (
   id TEXT PRIMARY KEY,
   name TEXT,
-  start_date TEXT,
-  due_date TEXT
+  start_date TEXT,          -- first day of the trimester period
+  end_date TEXT,             -- last day of the trimester period (no gap between trimesters)
+  due_date TEXT               -- National's mailing/billing deadline, which falls inside the period, not at its edge
 );
 
-INSERT OR IGNORE INTO trimesters (id, name, start_date, due_date) VALUES
-  ('tri1-2026', '1st Trimester', '2026-05-01', '2026-08-15'),
-  ('tri2-2026', '2nd Trimester', '2026-09-01', '2026-12-15'),
-  ('tri3-2027', '3rd Trimester', '2027-01-01', '2027-04-15');
+INSERT OR IGNORE INTO trimesters (id, name, start_date, end_date, due_date) VALUES
+  ('tri1-2026', '1st Trimester', '2026-05-01', '2026-08-31', '2026-08-15'),
+  ('tri2-2026', '2nd Trimester', '2026-09-01', '2026-12-31', '2026-12-15'),
+  ('tri3-2027', '3rd Trimester', '2027-01-01', '2027-04-30', '2027-04-15');
 
 CREATE INDEX IF NOT EXISTS idx_members_chapter ON members(chapter_id);
 CREATE INDEX IF NOT EXISTS idx_events_member ON member_events(member_id);

@@ -3,9 +3,9 @@ import './index.css';
 import * as api from './data';
 
 const TRI_DEFAULTS = [
-  { name: '1st Trimester', start_date: '2026-05-01', due_date: '2026-08-15' },
-  { name: '2nd Trimester', start_date: '2026-09-01', due_date: '2026-12-15' },
-  { name: '3rd Trimester', start_date: '2027-01-01', due_date: '2027-04-15' },
+  { name: '1st Trimester', start_date: '2026-05-01', end_date: '2026-08-31', due_date: '2026-08-15' },
+  { name: '2nd Trimester', start_date: '2026-09-01', end_date: '2026-12-31', due_date: '2026-12-15' },
+  { name: '3rd Trimester', start_date: '2027-01-01', end_date: '2027-04-30', due_date: '2027-04-15' },
 ];
 
 function fmtDate(iso) {
@@ -180,7 +180,8 @@ export default function App() {
         {trimesters.map(t => (
           <div key={t.name} className={`tri-tick ${t.name === cur.name ? 'current' : ''}`}>
             <div className="name">{t.name}</div>
-            <div className="due">Due {fmtDate(t.due_date)}</div>
+            <div className="due">{fmtDate(t.start_date)} – {fmtDate(t.end_date)}</div>
+            <div className="due" style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>Billing due {fmtDate(t.due_date)}</div>
           </div>
         ))}
         <div className="tri-countdown"><strong>{dd}</strong>days to mailing deadline</div>
