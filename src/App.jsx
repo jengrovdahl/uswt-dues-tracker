@@ -167,8 +167,8 @@ export default function App() {
   async function handleBulkMembers() {
     const rows = parseDelimited(bulkMembersText);
     const parsed = rows.map(r => ({
-      lastName: r[0] || '', firstName: r[1] || '', address: r[2] || '', city: r[3] || '',
-      zip: r[4] || '', homePhone: r[5] || '', email: r[6] || '', birthdate: r[7] || '', joinDate: r[8] || '',
+      lastName: r[0] || '', firstName: r[1] || '', address: r[2] || '', city: r[3] || '', state: r[4] || '',
+      zip: r[5] || '', homePhone: r[6] || '', email: r[7] || '', birthdate: r[8] || '', joinDate: r[9] || '',
       transCode: 'new',
     })).filter(r => r.lastName && r.firstName);
     if (parsed.length === 0) { setBulkStatus('No valid rows found — need last name and first name in the first two columns.'); return; }
@@ -307,9 +307,9 @@ export default function App() {
           {bulkMembersOpen && (
             <div className="row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
               <p className="hint" style={{ marginBottom: 8 }}>
-                Paste rows for the chapter selected above — one member per line: last name, first name, address, city, zip, phone, email, birthdate (YYYY-MM-DD), join date (YYYY-MM-DD). Tab or comma separated. This is exactly the shape of the roster National will hand you at contract start.
+                Paste rows for the chapter selected above — one member per line: last name, first name, address, city, state, zip, phone, email, birthdate (YYYY-MM-DD), join date (YYYY-MM-DD). Tab or comma separated. This is exactly the shape of the roster National will hand you at contract start.
               </p>
-              <textarea className="recap" style={{ minHeight: 140 }} value={bulkMembersText} onChange={e => setBulkMembersText(e.target.value)} placeholder={'Example\tJane\t123 Main St\tBlooming Prairie\t55917\t507-555-0100\tjane@example.com\t1985-04-12\t2020-01-01'} />
+              <textarea className="recap" style={{ minHeight: 140 }} value={bulkMembersText} onChange={e => setBulkMembersText(e.target.value)} placeholder={'Example\tJane\t123 Main St\tBlooming Prairie\tMN\t55917\t507-555-0100\tjane@example.com\t1985-04-12\t2020-01-01'} />
               <div className="row" style={{ marginTop: 8 }}>
                 <button className="primary" onClick={handleBulkMembers}>Import members</button>
                 {bulkStatus && <span style={{ fontSize: 12, color: 'var(--muted)' }}>{bulkStatus}</span>}
