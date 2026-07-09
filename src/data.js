@@ -95,3 +95,16 @@ export async function getTrimesters() {
 export async function getEventsSince(dateIso) {
   return query('SELECT * FROM member_events WHERE event_date >= ? ORDER BY event_date', [dateIso]);
 }
+
+export async function bulkAddChapters(rows) {
+  for (const r of rows) {
+    await addChapter(r);
+  }
+}
+
+export async function bulkAddMembers(rows, chapterId) {
+  for (const r of rows) {
+    await addMember({ ...r, chapterId });
+  }
+}
+

@@ -26,6 +26,13 @@ function currentTri(trimesters) {
   for (const t of trimesters) if (new Date(t.start_date) <= now) cur = t;
   return cur;
 }
+function parseDelimited(text) {
+  return text.trim().split('\n').map(line => {
+    const delim = line.includes('\t') ? '\t' : ',';
+    return line.split(delim).map(cell => cell.trim().replace(/^"|"$/g, ''));
+  }).filter(row => row.some(cell => cell));
+}
+
 function stampFor(m) {
   if (m.uspp) return <span className="stamp uspp">USPP</span>;
   if (m.status === 'dropped') return <span className="stamp drop">DROP</span>;
@@ -46,6 +53,11 @@ export default function App() {
   const [billingChapter, setBillingChapter] = useState('');
   const [showSSN, setShowSSN] = useState(false);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [bulkChaptersOpen, setBulkChaptersOpen] = useState(false);
+  const [bulkChaptersText, setBulkChaptersText] = useState('');
+  const [bulkMembersOpen, setBulkMembersOpen] = useState(false);
+  const [bulkMembersText, setBulkMembersText] = useState('');
+  const [bulkStatus, setBulkStatus] = useState('');
 
   const refresh = useCallback(async () => {
     const [c, m, q, t] = await Promise.all([
@@ -139,6 +151,34 @@ export default function App() {
     await refresh();
   }
 
+  async function handleBulkChapters() {
+    const rows = parseDelimited(bulkChaptersText);
+    const parsed = rows.map(r => ({
+      name: r[0] || '', chapterNum: r[1] || '', district: r[2] || '', state: r[3] || '', president: r[4] || '',
+    })).filter(r => r.name);
+    if (parsed.length === 0) { setBulkStatus('No valid rows found — need at least a chapter name in column 1.'); return; }
+    setBulkStatus(`Importing ${parsed.length} chapters…`);
+    await api.bulkAddChapters(parsed);
+    setBulkStatus(`Imported ${parsed.length} chapters.`);
+    setBulkChaptersText('');
+    await refresh();
+  }
+
+  async function handleBulkMembers() {
+    const rows = parseDelimited(bulkMembersText);
+    const parsed = rows.map(r => ({
+      lastName: r[0] || '', firstName: r[1] || '', address: r[2] || '', city: r[3] || '',
+      zip: r[4] || '', homePhone: r[5] || '', email: r[6] || '', birthdate: r[7] || '', joinDate: r[8] || '',
+      transCode: 'new',
+    })).filter(r => r.lastName && r.firstName);
+    if (parsed.length === 0) { setBulkStatus('No valid rows found — need last name and first name in the first two columns.'); return; }
+    setBulkStatus(`Importing ${parsed.length} members…`);
+    await api.bulkAddMembers(parsed, rosterChapter);
+    setBulkStatus(`Imported ${parsed.length} members.`);
+    setBulkMembersText('');
+    await refresh();
+  }
+
   function buildRecap() {
     const now = new Date();
     const lines = [];
@@ -218,6 +258,21 @@ export default function App() {
             <input type="text" name="president" placeholder="President" />
             <button type="submit" className="primary">Add chapter</button>
           </form>
+          <div className="row">
+            <button onClick={() => setBulkChaptersOpen(v => !v)}>{bulkChaptersOpen ? 'Cancel bulk import' : 'Bulk import chapters'}</button>
+          </div>
+          {bulkChaptersOpen && (
+            <div className="row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+              <p className="hint" style={{ marginBottom: 8 }}>
+                Paste rows from a spreadsheet or CSV — one chapter per line, columns in this order: name, chapter #, district, state, president. Tab or comma separated both work.
+              </p>
+              <textarea className="recap" style={{ minHeight: 120 }} value={bulkChaptersText} onChange={e => setBulkChaptersText(e.target.value)} placeholder={'Example City Women of Today\tMN0099\t4\tMN\tPat Example'} />
+              <div className="row" style={{ marginTop: 8 }}>
+                <button className="primary" onClick={handleBulkChapters}>Import chapters</button>
+                {bulkStatus && <span style={{ fontSize: 12, color: 'var(--muted)' }}>{bulkStatus}</span>}
+              </div>
+            </div>
+          )}
           {chapters.length === 0 ? <div className="empty">No chapters yet — add one above.</div> : (
             <table>
               <thead><tr><th>Chapter</th><th>Chapter #</th><th>District</th><th>State</th><th>President</th><th>Members</th></tr></thead>
@@ -246,8 +301,21 @@ export default function App() {
               {chapters.map(c => <option key={c.id} value={c.id}>{c.name} ({c.chapter_num})</option>)}
             </select>
             <button onClick={() => setAddMemberOpen(v => !v)}>{addMemberOpen ? 'Cancel' : 'Add member'}</button>
+            <button onClick={() => setBulkMembersOpen(v => !v)}>{bulkMembersOpen ? 'Cancel bulk import' : 'Bulk import members'}</button>
             <button onClick={() => setShowSSN(v => !v)}>{showSSN ? 'Hide SSN column' : 'Show SSN column'}</button>
           </div>
+          {bulkMembersOpen && (
+            <div className="row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+              <p className="hint" style={{ marginBottom: 8 }}>
+                Paste rows for the chapter selected above — one member per line: last name, first name, address, city, zip, phone, email, birthdate (YYYY-MM-DD), join date (YYYY-MM-DD). Tab or comma separated. This is exactly the shape of the roster National will hand you at contract start.
+              </p>
+              <textarea className="recap" style={{ minHeight: 140 }} value={bulkMembersText} onChange={e => setBulkMembersText(e.target.value)} placeholder={'Example\tJane\t123 Main St\tBlooming Prairie\t55917\t507-555-0100\tjane@example.com\t1985-04-12\t2020-01-01'} />
+              <div className="row" style={{ marginTop: 8 }}>
+                <button className="primary" onClick={handleBulkMembers}>Import members</button>
+                {bulkStatus && <span style={{ fontSize: 12, color: 'var(--muted)' }}>{bulkStatus}</span>}
+              </div>
+            </div>
+          )}
           {addMemberOpen && (
             <form className="row" onSubmit={handleAddMember}>
               <input type="text" name="firstName" placeholder="First name" required />
