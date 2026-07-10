@@ -304,19 +304,28 @@ export default function App() {
               {pdfStatus && <p className="hint" style={{ marginTop: 8 }}>{pdfStatus}</p>}
               {pdfPreview && (
                 <div style={{ marginTop: 10 }}>
-                  <table>
-                    <thead><tr><th>Name</th><th>City</th><th>Tri due</th><th>Status</th></tr></thead>
-                    <tbody>
-                      {pdfPreview.members.map((m, i) => (
-                        <tr key={i}>
-                          <td>{m.lastName}, {m.firstName}</td>
-                          <td>{m.city}, {m.state}</td>
-                          <td style={{ fontFamily: 'var(--mono)', textAlign: 'center' }}>{m.triDue || '—'}</td>
-                          <td>{m.uspp ? 'USPP' : (m.transCode || '—')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table>
+                      <thead><tr><th>Name</th><th>Address</th><th>City</th><th>State</th><th>Zip</th><th>Phone</th><th>Email</th><th>Join date</th><th>Birthdate</th><th>Tri due</th><th>Status</th></tr></thead>
+                      <tbody>
+                        {pdfPreview.members.map((m, i) => (
+                          <tr key={i}>
+                            <td>{m.lastName}, {m.firstName}</td>
+                            <td>{m.address || '—'}</td>
+                            <td>{m.city || '—'}</td>
+                            <td>{m.state || '—'}</td>
+                            <td>{m.zip || '—'}</td>
+                            <td>{m.homePhone || '—'}</td>
+                            <td>{m.email || '—'}</td>
+                            <td>{fmtDate(m.joinDate) || '—'}</td>
+                            <td>{fmtDate(m.birthdate) || '—'}</td>
+                            <td style={{ fontFamily: 'var(--mono)', textAlign: 'center' }}>{m.triDue || '—'}</td>
+                            <td>{m.uspp ? 'USPP' : (m.transCode || '—')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                   <div className="row" style={{ marginTop: 10 }}>
                     <button className="primary" onClick={confirmPdfImport}>Confirm import</button>
                     <button className="ghost" onClick={() => { setPdfPreview(null); setPdfStatus(''); }}>Cancel</button>
