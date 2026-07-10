@@ -526,7 +526,7 @@ export default function App() {
                 <table>
                   <thead>
                     <tr>
-                      <th>Name</th><th>Address</th><th>Phone</th><th>Join date</th><th>Tri due</th>
+                      <th>Name</th><th>Address</th><th>Phone</th><th>Email</th><th>Join date</th><th>Birthdate</th><th>Tri due</th>
                       {showSSN && <th>SSN</th>}
                       <th>Status</th><th>Actions</th>
                     </tr>
@@ -534,7 +534,7 @@ export default function App() {
                   <tbody>
                     {chapterMembers.map(m => editingMemberId === m.id ? (
                       <tr key={m.id}>
-                        <td colSpan={showSSN ? 8 : 7}>
+                        <td colSpan={showSSN ? 10 : 9}>
                           <form className="row" onSubmit={e => handleSaveEdit(e, m.id)}>
                             <input type="text" name="firstName" defaultValue={m.first_name} placeholder="First name" required style={{ width: 100 }} />
                             <input type="text" name="lastName" defaultValue={m.last_name} placeholder="Last name" required style={{ width: 100 }} />
@@ -560,7 +560,9 @@ export default function App() {
                         <td>{m.last_name}, {m.first_name}</td>
                         <td>{m.address}, {m.city} {m.state} {m.zip}</td>
                         <td style={{ fontFamily: 'var(--mono)' }}>{m.home_phone || '—'}</td>
+                        <td>{m.email || '—'}</td>
                         <td>{fmtDate(m.join_date)}</td>
+                        <td>{fmtDate(m.birthdate)}</td>
                         <td style={{ fontFamily: 'var(--mono)', textAlign: 'center' }}>{m.tri_due || '—'}</td>
                         {showSSN && <td style={{ fontFamily: 'var(--mono)' }}>{m.ssn}</td>}
                         <td>{stampFor(m)}</td>
