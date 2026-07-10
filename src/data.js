@@ -28,7 +28,7 @@ export async function addMember(m) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [id, m.chapterId, m.lastName, m.firstName, m.address || '', m.city || '', m.state || '', m.zip || '',
      m.homePhone || '', m.email || '', m.birthdate || '', m.joinDate || new Date().toISOString().slice(0, 10),
-     m.ssn || '0', m.status || 'active', m.transCode || 'new', m.uspp ? 1 : 0, m.triDue || null, m.notes || '']
+     m.ssn || '0', m.status || 'active', (m.transCode !== undefined && m.transCode !== null) ? m.transCode : 'new', m.uspp ? 1 : 0, m.triDue || null, m.notes || '']
   );
   await logEvent(id, m.chapterId, m.transCode || 'new', 'Added to roster');
   return id;
@@ -40,7 +40,7 @@ export async function updateMember(id, fields) {
   for (const [key, col] of Object.entries({
     lastName: 'last_name', firstName: 'first_name', address: 'address', city: 'city',
     state: 'state', zip: 'zip', homePhone: 'home_phone', email: 'email',
-    birthdate: 'birthdate', joinDate: 'join_date', ssn: 'ssn', triDue: 'tri_due',
+    birthdate: 'birthdate', joinDate: 'join_date', ssn: 'ssn', triDue: 'tri_due', transCode: 'trans_code',
   })) {
     if (fields[key] !== undefined) { cols.push(`${col} = ?`); args.push(fields[key]); }
   }

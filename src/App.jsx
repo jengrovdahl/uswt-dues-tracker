@@ -158,6 +158,11 @@ export default function App() {
     await refresh();
   }
 
+  async function handleClearStatus(memberId) {
+    await api.updateMember(memberId, { transCode: '' });
+    await refresh();
+  }
+
   async function handleSaveEdit(e, memberId) {
     e.preventDefault();
     const f = e.target;
@@ -563,6 +568,7 @@ export default function App() {
                           <button className="small" onClick={() => setEditingMemberId(m.id)}>Edit</button>
                           <button className="small" onClick={() => handleMark(m.id, m.chapter_id, 'rnew')}>Renew</button>
                           <button className="small" onClick={() => handleMark(m.id, m.chapter_id, 'drop')}>Drop</button>
+                          {m.trans_code && <button className="small" onClick={() => handleClearStatus(m.id)}>Clear status</button>}
                         </td>
                       </tr>
                     ))}
