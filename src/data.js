@@ -1,5 +1,20 @@
 import { query, run, uid } from './db';
 
+export async function updateChapter(id, fields) {
+  const cols = [];
+  const args = [];
+  for (const [key, col] of Object.entries({
+    name: 'name', chapterNum: 'chapter_num', district: 'district', state: 'state',
+    president: 'president', presidentPhone: 'president_phone', presidentEmail: 'president_email',
+    meetingNight: 'meeting_night',
+  })) {
+    if (fields[key] !== undefined) { cols.push(`${col} = ?`); args.push(fields[key]); }
+  }
+  if (cols.length === 0) return;
+  args.push(id);
+  await run(`UPDATE chapters SET ${cols.join(', ')} WHERE id = ?`, args);
+}
+
 export async function getChapters() {
   return query('SELECT * FROM chapters ORDER BY name');
 }

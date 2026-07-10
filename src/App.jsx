@@ -68,6 +68,7 @@ export default function App() {
   const [pdfStatus, setPdfStatus] = useState('');
   const [pdfPreview, setPdfPreview] = useState(null);
   const [editingMemberId, setEditingMemberId] = useState(null);
+  const [editingChapter, setEditingChapter] = useState(false);
 
   const refresh = useCallback(async () => {
     const [c, m, q, t] = await Promise.all([
@@ -160,6 +161,23 @@ export default function App() {
 
   async function handleClearStatus(memberId) {
     await api.updateMember(memberId, { transCode: '' });
+    await refresh();
+  }
+
+  async function handleSaveChapterEdit(e) {
+    e.preventDefault();
+    const f = e.target;
+    await api.updateChapter(selectedChapterId, {
+      name: f.name.value.trim(),
+      chapterNum: f.chapterNum.value.trim(),
+      district: f.district.value.trim(),
+      state: f.state.value.trim().toUpperCase(),
+      president: f.president.value.trim(),
+      presidentPhone: f.presidentPhone.value.trim(),
+      presidentEmail: f.presidentEmail.value.trim(),
+      meetingNight: f.meetingNight.value.trim(),
+    });
+    setEditingChapter(false);
     await refresh();
   }
 
@@ -478,7 +496,34 @@ export default function App() {
 
           {browseLevel === 'roster' && selectedChapter && (
             <div>
-              <div className="cards" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+              <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h2 className="section" style={{ marginBottom: 4 }}>{selectedChapter.name}</h2>
+                  {!editingChapter && (
+                    <div className="hint" style={{ margin: 0 }}>
+                      Chapter #: {selectedChapter.chapter_num} · District #: {selectedChapter.district} · State: {selectedChapter.state}<br />
+                      President: {selectedChapter.president || '—'} · Phone: {selectedChapter.president_phone || '—'} · Email: {selectedChapter.president_email || '—'}<br />
+                      Meeting night: {selectedChapter.meeting_night || '—'}
+                    </div>
+                  )}
+                </div>
+                <button className="small" onClick={() => setEditingChapter(v => !v)}>{editingChapter ? 'Cancel' : 'Edit chapter'}</button>
+              </div>
+              {editingChapter && (
+                <form className="row" onSubmit={handleSaveChapterEdit} style={{ marginTop: 10 }}>
+                  <input type="text" name="name" defaultValue={selectedChapter.name} placeholder="Chapter name" required style={{ width: 220 }} />
+                  <input type="text" name="chapterNum" defaultValue={selectedChapter.chapter_num} placeholder="Chapter #" style={{ width: 100 }} />
+                  <input type="text" name="district" defaultValue={selectedChapter.district} placeholder="District #" style={{ width: 90 }} />
+                  <input type="text" name="state" defaultValue={selectedChapter.state} placeholder="State" style={{ width: 60 }} />
+                  <input type="text" name="president" defaultValue={selectedChapter.president} placeholder="President" style={{ width: 150 }} />
+                  <input type="tel" name="presidentPhone" defaultValue={selectedChapter.president_phone} placeholder="Phone" style={{ width: 130 }} />
+                  <input type="email" name="presidentEmail" defaultValue={selectedChapter.president_email} placeholder="Email" style={{ width: 180 }} />
+                  <input type="text" name="meetingNight" defaultValue={selectedChapter.meeting_night} placeholder="Meeting night" style={{ width: 130 }} />
+                  <button type="submit" className="primary small">Save</button>
+                </form>
+              )}
+
+              <div className="cards" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginTop: 16 }}>
                 <div className="card"><div className="num">{chapterMembers.filter(m => m.status === 'active').length}</div><div className="lbl">Active members</div></div>
                 <div className="card"><div className="num">{chapterDueMembers.length}</div><div className="lbl">Due this trimester</div></div>
                 <div className="card"><div className="num">{chapterMembers.filter(m => m.status === 'dropped').length}</div><div className="lbl">Dropped</div></div>
