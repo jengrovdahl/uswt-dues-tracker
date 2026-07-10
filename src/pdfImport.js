@@ -126,15 +126,20 @@ export async function parseChapterRosterPdf(arrayBuffer) {
     };
   }).filter(m => m.lastName && m.firstName);
 
-  // National's own report truncates long city names in the member table (fixed
-  // column width) — e.g. "BLOOMING PRAI" instead of "BLOOMING PRAIRIE". The full
-  // name is available, untruncated, in the chapter's own header address, so use
-  // it to repair any member row that's an obvious truncation of it.
+  // National's own data has inconsistent truncations of long city names — sometimes
+  // cut at the end ("BLOOMING PRAI"), sometimes a word shortened elsewhere
+  // ("BLOOM PRAIRIE") — evidently manual, not a single consistent column-width cut.
+  // The full name is available, untruncated, in the chapter's own header address,
+  // so repair any member row whose city is a word-by-word truncation of it.
   if (headerCity) {
+    const hWords = headerCity.toUpperCase().split(/\s+/);
     for (const m of members) {
-      if (m.city && headerCity.toUpperCase().startsWith(m.city.toUpperCase()) && m.city.length < headerCity.length) {
-        m.city = headerCity;
-      }
+      if (!m.city) continue;
+      const mWords = m.city.toUpperCase().split(/\s+/);
+      const isTruncation = mWords.length === hWords.length
+        && mWords.every((w, i) => hWords[i].startsWith(w))
+        && m.city.length < headerCity.length;
+      if (isTruncation) m.city = headerCity;
     }
   }
 
