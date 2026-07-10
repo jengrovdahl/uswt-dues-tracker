@@ -67,6 +67,9 @@ export async function parseChapterRosterPdf(arrayBuffer) {
 
   const fullText = rows.map(lineText).join('\n');
 
+  const headerCityMatch = fullText.match(/^([A-Z][A-Z\s]+?)\s+([A-Z]{2}),\s*(\d{5})$/m);
+  const headerCity = headerCityMatch ? headerCityMatch[1].trim() : '';
+
   const chapterNameMatches = [...fullText.matchAll(/^([A-Z][A-Z\s'-]*WOMEN OF TODAY)$/gm)]
     .map(m => m[1].trim())
     .filter(n => n !== 'UNITED STATES WOMEN OF TODAY');
@@ -122,6 +125,18 @@ export async function parseChapterRosterPdf(arrayBuffer) {
       email: (cells.email || '').trim(),
     };
   }).filter(m => m.lastName && m.firstName);
+
+  // National's own report truncates long city names in the member table (fixed
+  // column width) — e.g. "BLOOMING PRAI" instead of "BLOOMING PRAIRIE". The full
+  // name is available, untruncated, in the chapter's own header address, so use
+  // it to repair any member row that's an obvious truncation of it.
+  if (headerCity) {
+    for (const m of members) {
+      if (m.city && headerCity.toUpperCase().startsWith(m.city.toUpperCase()) && m.city.length < headerCity.length) {
+        m.city = headerCity;
+      }
+    }
+  }
 
   return { chapter, members, rawText: fullText };
 }
