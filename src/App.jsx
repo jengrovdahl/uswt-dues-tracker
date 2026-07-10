@@ -67,6 +67,7 @@ export default function App() {
   const [bulkStatus, setBulkStatus] = useState('');
   const [pdfStatus, setPdfStatus] = useState('');
   const [pdfPreview, setPdfPreview] = useState(null);
+  const [editingMemberId, setEditingMemberId] = useState(null);
 
   const refresh = useCallback(async () => {
     const [c, m, q, t] = await Promise.all([
@@ -154,6 +155,26 @@ export default function App() {
 
   async function handleMark(memberId, chapterId, action) {
     await api.updateMemberStatus(memberId, chapterId, action);
+    await refresh();
+  }
+
+  async function handleSaveEdit(e, memberId) {
+    e.preventDefault();
+    const f = e.target;
+    await api.updateMember(memberId, {
+      firstName: f.firstName.value.trim(),
+      lastName: f.lastName.value.trim(),
+      address: f.address.value.trim(),
+      city: f.city.value.trim(),
+      state: f.state.value.trim(),
+      zip: f.zip.value.trim(),
+      homePhone: f.phone.value.trim(),
+      email: f.email.value.trim(),
+      birthdate: f.birthdate.value,
+      joinDate: f.joinDate.value,
+      triDue: f.triDue.value ? parseInt(f.triDue.value, 10) : null,
+    });
+    setEditingMemberId(null);
     await refresh();
   }
 
@@ -497,7 +518,30 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {chapterMembers.map(m => (
+                    {chapterMembers.map(m => editingMemberId === m.id ? (
+                      <tr key={m.id}>
+                        <td colSpan={showSSN ? 8 : 7}>
+                          <form className="row" onSubmit={e => handleSaveEdit(e, m.id)}>
+                            <input type="text" name="firstName" defaultValue={m.first_name} placeholder="First name" required style={{ width: 100 }} />
+                            <input type="text" name="lastName" defaultValue={m.last_name} placeholder="Last name" required style={{ width: 100 }} />
+                            <input type="text" name="address" defaultValue={m.address} placeholder="Address" style={{ width: 140 }} />
+                            <input type="text" name="city" defaultValue={m.city} placeholder="City" style={{ width: 110 }} />
+                            <input type="text" name="state" defaultValue={m.state} placeholder="State" style={{ width: 50 }} />
+                            <input type="text" name="zip" defaultValue={m.zip} placeholder="Zip" style={{ width: 70 }} />
+                            <input type="tel" name="phone" defaultValue={m.home_phone} placeholder="Phone" style={{ width: 110 }} />
+                            <input type="email" name="email" defaultValue={m.email} placeholder="Email" style={{ width: 160 }} />
+                            <input type="date" name="birthdate" defaultValue={m.birthdate} title="Birthdate" />
+                            <input type="date" name="joinDate" defaultValue={m.join_date} title="Join date" />
+                            <select name="triDue" defaultValue={m.tri_due || ''}>
+                              <option value="">Tri due?</option>
+                              <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                            </select>
+                            <button type="submit" className="primary small">Save</button>
+                            <button type="button" className="ghost small" onClick={() => setEditingMemberId(null)}>Cancel</button>
+                          </form>
+                        </td>
+                      </tr>
+                    ) : (
                       <tr key={m.id}>
                         <td>{m.last_name}, {m.first_name}</td>
                         <td>{m.address}, {m.city} {m.state} {m.zip}</td>
@@ -507,6 +551,7 @@ export default function App() {
                         {showSSN && <td style={{ fontFamily: 'var(--mono)' }}>{m.ssn}</td>}
                         <td>{stampFor(m)}</td>
                         <td>
+                          <button className="small" onClick={() => setEditingMemberId(m.id)}>Edit</button>
                           <button className="small" onClick={() => handleMark(m.id, m.chapter_id, 'rnew')}>Renew</button>
                           <button className="small" onClick={() => handleMark(m.id, m.chapter_id, 'drop')}>Drop</button>
                         </td>

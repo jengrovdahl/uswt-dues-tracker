@@ -34,6 +34,21 @@ export async function addMember(m) {
   return id;
 }
 
+export async function updateMember(id, fields) {
+  const cols = [];
+  const args = [];
+  for (const [key, col] of Object.entries({
+    lastName: 'last_name', firstName: 'first_name', address: 'address', city: 'city',
+    state: 'state', zip: 'zip', homePhone: 'home_phone', email: 'email',
+    birthdate: 'birthdate', joinDate: 'join_date', ssn: 'ssn', triDue: 'tri_due',
+  })) {
+    if (fields[key] !== undefined) { cols.push(`${col} = ?`); args.push(fields[key]); }
+  }
+  if (cols.length === 0) return;
+  args.push(id);
+  await run(`UPDATE members SET ${cols.join(', ')}, updated_at = datetime('now') WHERE id = ?`, args);
+}
+
 export async function updateMemberStatus(memberId, chapterId, action) {
   const transCode = action === 'drop' ? 'drop' : action === 'transfer' ? 'transfer' : 'rnew';
   const status = action === 'drop' ? 'dropped' : 'active';
